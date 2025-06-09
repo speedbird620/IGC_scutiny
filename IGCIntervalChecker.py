@@ -224,6 +224,7 @@ def main():
                 analyze_directory(os.path.join(dir_path, subdir))
                 
     print("\nAnalysis complete!")
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
@@ -413,6 +414,7 @@ def main():
                 analyze_directory(os.path.join(dir_path, subdir))
                 
     print("\nAnalysis complete!")
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()

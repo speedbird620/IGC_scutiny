@@ -254,7 +254,7 @@ def analyze_directory(dir_path):
             print("-" * 80)
             continue
             
-        print(f"  Average interval: {format_time(avg_interval)}")
+        #print(f"  Average interval: {format_time(avg_interval)}")
         if is_fixed:
             print(f"  Interval type: FIXED")
         else:

@@ -6,6 +6,7 @@
 #
 # Rev 1.0 - Initial version
 #
+# Reference: https://xp-soaring.github.io/igc_file_format/igc_format_2008.html#link_3.1
 
 import os
 import sys
@@ -54,7 +55,12 @@ def parse_igc_header(file_path):
     header_info = {
         'manufacturer': 'Unknown',
         'device_model': 'Unknown',
-        'device_id': 'Unknown'
+        'device_id': 'Unknown',
+        'dateYY': 'Unknown',
+        'dateMM': 'Unknown',
+        'dateDD': 'Unknown',
+        'device_FW': 'Unknown',
+        'device_HW': 'Unknown'
     }
     
     try:
@@ -65,23 +71,30 @@ def parse_igc_header(file_path):
                 # Parse A record (FR manufacturer and identification)
                 if line.startswith('A'):
                     if len(line) >= 4:
-                        mfr_code = line[1:4]
-                        # Map manufacturer codes to full names
+                        mfr_code = line[1:4]                        # Map manufacturer codes to full names (from IGC approval table)
                         manufacturers = {
-                            'LXN': 'LX Navigation',
-                            'CAM': 'Cambridge',
+                            'ACT': 'Aircotec Flight Instruments',
+                            'CAM': 'Cambridge Aero Instruments',
+                            'CNI': 'ClearNav Instruments',
                             'DSX': 'DataSwan',
                             'EWA': 'EW Avionics',
                             'FIL': 'Filser',
-                            'FLA': 'FLARM',
-                            'IMI': 'IMI Gliding',
-                            'LXV': 'LXNAV',
+                            'FLA': 'Flarm Technology GmbH',
+                            'XFL': 'Flarm Technology GmbH',
+                            'GCS': 'Garrecht Avionik GmbH',
+                            'IMI': 'IMI Gliding Equipment',
+                            'LGS': 'Logstream SP',
+                            'LXN': 'LX Navigation',
+                            'LXV': 'LXNAV ',
                             'NAV': 'Naviter',
                             'NKL': 'Nielsen-Kellerman',
-                            'PRU': 'Aircotec',
-                            'SDI': 'Streamline Data Instruments',
-                            'TRI': 'TRI',
-                            'WES': 'Westerboer'
+                            'NTE': 'New Technologies',
+                            'PFE': 'PressFinish Electronics',
+                            'RCE': 'RC Electronics',
+                            'SCH': 'Scheffel Automation',
+                            'SDI': 'Streamline Digital Instruments',
+                            'TRI': 'Triadis Engineering GmbH',
+                            'ZAN': 'Zander Segelflugrechner'
                         }
                         header_info['manufacturer'] = manufacturers.get(mfr_code, mfr_code)
                         
@@ -93,8 +106,27 @@ def parse_igc_header(file_path):
                 if line.startswith('HFFTYFRTYPE:'):
                     parts = line[12:].split(',')
                     if parts and parts[0].strip():
-                        header_info['device_model'] = parts[1].strip()
-                
+                        header_info['device_model'] = parts[0].strip()
+
+                # Parse H records for device info
+                if line.startswith('HFRFWFIRMWAREVERSION:'):
+                    parts = line[12:].split(':')
+                    if parts and parts[0].strip():
+                        header_info['device_FW'] = parts[1].strip()
+
+                # Parse H records for device info
+                if line.startswith('HFRHWHARDWAREVERSION:'):
+                    parts = line[12:].split(':')
+                    if parts and parts[0].strip():
+                        header_info['device_HW'] = parts[1].strip()
+
+                # Parse H records for device info
+                if line.startswith('HFDTEDATE:'):
+                    #print(line)
+                    header_info['dateDD'] = line[10:12]
+                    header_info['dateMM'] = line[12:14]
+                    header_info['dateYY'] = line[14:]
+
                 # Break after we've read past the header section (when B records start)
                 if line.startswith('B'):
                     break
@@ -211,8 +243,10 @@ def analyze_directory(dir_path):
         (is_fixed, avg_interval, min_interval, max_interval, 
          stddev, total_points, intervals, times) = analyze_igc_file(file_path)
         
-        print(f"File: {filename}")
+        print(f"File: {filename}, date: {header_info['dateYY']}-{header_info['dateMM']}-{header_info['dateDD']}")
         print(f"  Flight Recorder: {header_info['manufacturer']}, {header_info['device_model']}, {header_info['device_id']}")
+        print(f"  Firmware: {header_info['device_FW']}")
+        print(f"  Hardware: {header_info['device_HW']}")
         print(f"  Points logged: {total_points}")
         
         if total_points < 2:
@@ -284,12 +318,6 @@ def main():
     # Check if user wants to analyze subdirectories
     subdirs = [d for d in os.listdir(dir_path) 
               if os.path.isdir(os.path.join(dir_path, d))]
-    
-    if subdirs:
-        analyze_subdirs = input(f"\nFound {len(subdirs)} subdirectories. Analyze them too? (y/n): ")
-        if analyze_subdirs.lower() in ('y', 'yes'):
-            for subdir in subdirs:
-                analyze_directory(os.path.join(dir_path, subdir))
                 
     print("\nAnalysis complete!")
     sys.exit(0)
